@@ -133,7 +133,7 @@ Start binary write
 
 The following command will compute the distance closures.
 The command needs the ch levels used to partition the ch graph.
-They to be given as a single string separated by a comma.
+They need to be given as a single string separated by a comma.
 
 ```bash
 $ docker-compose --env-file lichtenstein.env run dgc dgc "5,10,15"
@@ -177,8 +177,8 @@ Finished exporting data
 
 ## Run the Benchmarks
 
-We're no ready to run the benchmarks.
-We first have to generate the queries (you may also provide one yourself):
+We're now ready to run the benchmarks.
+Let's generate some random queries (you may also provide them yourself):
 
 ```bash
 $ docker-compose --env-file lichtenstein.env run dgc queries --query-sizes 3 4 5
@@ -190,10 +190,10 @@ Generating 10^5 queries
 ```
 
 We can now run the benchmarks.
-The following command will run the dgc and ch out-of-memory benchmarks each twice with queries of size $10^3$ and $10^4$.
+The following command will run the dgc and ch benchmarks each twice with queries of size $10^3$ and $10^4$.
 After each iteration the current result table is printed which we omit here for brevity.
 
 ```bash
-$ docker-compose --env-file lichtenstein.env run dgc bench --runs 2 --query-sizes 3 4 --selection dgc-oom ch-oom
+$ docker-compose --env-file lichtenstein.env run dgc bench --runs 2 --query-sizes 3 4 --selection dgc-oom ch-oom dgc-im ch-im
 
 ```
