@@ -1,0 +1,6 @@
+[submodule "vendor/sserialize"]
+	path = vendor/sserialize
+	url = https://github.com/dbahrdt/sserialize
+[submodule "vendor/libpqxx"]
+	path = vendor/libpqxx
+	url = https://github.com/jtv/libpqxx

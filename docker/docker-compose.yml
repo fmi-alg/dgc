@@ -1,0 +1,17 @@
+version: '3.6'
+
+services:
+  dgc:
+    build: ./src/
+    image: dbahrdt/dgc:latest
+    environment:
+      - DGC_CREATE_NUM_THREADS=4
+      - CH_CONSTRUCTOR_NUM_THREADS=4
+      - BENCH_NUM_THREADS=16
+    volumes:
+    - ${DGC_SOURCE}:/source
+    - ${DGC_RESULTS}:/results
+    - ${DGC_DATA}:/data
+    - ${DGC_DB}:/var/lib/postgres
+    - /proc/sys/vm/drop_caches:/drop_caches
+    shm_size: 4G
