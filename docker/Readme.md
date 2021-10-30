@@ -194,6 +194,79 @@ The following command will run the dgc and ch benchmarks each twice with queries
 After each iteration the current result table is printed which we omit here for brevity.
 
 ```bash
-$ docker-compose --env-file lichtenstein.env run dgc bench --runs 2 --query-sizes 3 4 --selection dgc-oom ch-oom dgc-im ch-im
+docker-compose --env-file lichtenstein.env run dgc bench --runs 2 --query-sizes 3 4 --selection dgc-oom ch-oom dgc-im ch-im
+```
 
+You may find the results in `data/lichtenstein/results/bench`:
+
+```bash
+$ ls -1
+ch-im_3_1_False_False_0
+ch-im_3_1_False_False_1
+ch-im_4_1_False_False_0
+...
+summary.txt
+```
+
+The format is `{algo}_{num_queries}_{threads}_{dio}_{advise_random}_{run}`.
+Each file has the following content:
+
+```bash
+$ cat ch-im_3_1_False_False_0
+count,cumulative time
+100,634
+200,1211
+300,1806
+400,2438
+500,3063
+600,3703
+700,4319
+800,4956
+900,5500
+1000,6066
+```
+
+The file `summary.txt` contains the final result table.
+
+```ascii
++---------+--------+-------+-----+--------+-------------+-------+
+|    algo | #q 10^ | async | dio | ad rnd |    distance |  time |
++---------+--------+-------+-----+--------+-------------+-------+
+| dgc-oom |      3 |       |     |   X    |  89863829.0 | 119.0 |
+| dgc-oom |      3 |       |     |        |  89863829.0 |  13.0 |
+| dgc-oom |      3 |   X   |     |   X    |  89863829.0 |  40.0 |
+| dgc-oom |      3 |   X   |     |        |  89863829.0 |  18.5 |
+| dgc-oom |      4 |       |     |   X    | 917519327.0 |  21.5 |
+| dgc-oom |      4 |       |     |        | 917519327.0 |  11.0 |
+| dgc-oom |      4 |   X   |     |   X    | 917519327.0 |  15.0 |
+| dgc-oom |      4 |   X   |     |        | 917519327.0 |  12.0 |
+|  ch-oom |      3 |       |     |   X    |  89863829.0 | 140.5 |
+|  ch-oom |      3 |       |     |        |  89863829.0 |  23.0 |
+|  ch-oom |      3 |   X   |     |   X    |  89863829.0 |  30.0 |
+|  ch-oom |      3 |   X   |     |        |  89863829.0 |  20.0 |
+|  ch-oom |      4 |       |     |   X    | 917519327.0 |  29.5 |
+|  ch-oom |      4 |       |     |        | 917519327.0 |  19.5 |
+|  ch-oom |      4 |   X   |     |   X    | 917519327.0 |  24.0 |
+|  ch-oom |      4 |   X   |     |        | 917519327.0 |  20.0 |
+|  dgc-im |      3 |       |     |        |  89863829.0 |   2.0 |
+|  dgc-im |      4 |       |     |        | 917519327.0 |   2.0 |
+|   ch-im |      3 |       |     |        |  89863829.0 |   5.0 |
+|   ch-im |      4 |       |     |        | 917519327.0 |   4.0 |
++---------+--------+-------+-----+--------+-------------+-------+
+```
+
+You can convert the table into a `pandas.DataFrame` with the following code:
+
+```Python
+csv_data = []
+with open("summary.txt", 'rt') as f:
+    for line in f.readlines():
+        if not len(line) or line.startswith('+-'):
+            continue
+        csv_data.append(line[1:].replace('|', ';').rstrip(';'))
+
+tbl = pd.read_csv(StringIO("\n".join(csv_data)), sep=";")
+tbl.rename(columns=lambda x : x.strip(), inplace=True)
+for col in ["async", "dio", "ad rnd"]:
+    tbl[col]=tbl[col].apply(lambda x: "X" in x, convert_dtype=True)
 ```
