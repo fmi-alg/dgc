@@ -92,7 +92,7 @@ FROM buildenv AS dgc
 WORKDIR ${SRC_DIR}
 RUN git clone --recursive -b master https://github.com/fmi-alg/dgc.git
 RUN git -C ${SRC_DIR}/dgc fetch \ 
-	&& git -C ${SRC_DIR}/dgc checkout deb3c564941ba54514d8c2124033cc4137efea2d \
+	&& git -C ${SRC_DIR}/dgc checkout 6436dcaf2058f207ce6caa12747ff762526ab076 \
 	&& git -C ${SRC_DIR}/dgc submodule update --init --recursive
 WORKDIR ${SRC_DIR}/dgc/build
 RUN cmake -DCMAKE_BUILD_TYPE=Release -DOPTIMIZE_ULTRA=TRUE ../
