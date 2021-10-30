@@ -115,8 +115,8 @@ if args.gen:
 		logging.info("Generating 10^{} queries".format(num_queries))
 		with open(query_fn(num_queries), mode="wt") as f:
 			for i in range(0, 10**num_queries):
-				src = random.randint(0, num_nodes)
-				tgt = random.randint(0, num_nodes)
+				src = random.randint(0, num_nodes-1)
+				tgt = random.randint(0, num_nodes-1)
 				f.write("{}\t{}\n".format(src, tgt))
 				
 
