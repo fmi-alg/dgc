@@ -31,7 +31,7 @@ function setPostgresPassword() {
 
 function die() {
     echo ${1}
-    service postgresql stop
+    service postgresql stop > /dev/null 2>&1
     exit 1
 }
 
@@ -195,7 +195,7 @@ while (( "$#" )); do
 done
 
 if [ "$do_queries" = "y" ]; then
-    mkdir -p ${resultsDir}/queries || die "Could not create queries directory"
+    sudo -u dgc mkdir -p ${resultsDir}/queries || die "Could not create queries directory"
     sudo -u dgc bench.py \
         -e dgc-query \
         -q ${resultsDir}/queries/ --generate --query-sizes ${query_sizes[@]} \
@@ -218,7 +218,7 @@ if [ "$do_bench" = "y" ]; then
         setPostgresPassword
     fi
 
-    mkdir -p ${resultsDir}/bench || die "Could not create bench directory"
+    sudo -u dgc mkdir -p ${resultsDir}/bench || die "Could not create bench directory"
     echo "Running benchmarks..."
     sudo -u dgc bench.py \
         -q ${resultsDir}/queries/ --query-sizes ${query_sizes[@]} \
