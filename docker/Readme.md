@@ -23,11 +23,18 @@ docker-compose pull
 ## Configuration
 
 By default all files are stored below the `data` folder.
-You may change this default by editing the `.env` file or export a different `DGC_BASE`:
+You may change this default by editing the `.env` file or copy it to another location.
+This is especially helpful if you want to benchmark multiple data sets.
 
 ```bash
-mkdir lichtenstein
-export DGC_BASE="./lichtenstein"
+mkdir data/lichtenstein
+cp .env lichtenstein.env
+$ vim lichtenstein.env
+DGC_BASE="./data/lichtenstein"
+DGC_SOURCE="${DGC_BASE}/source"
+DGC_DATA="${DGC_BASE}/data"
+DGC_RESULTS="${DGC_BASE}/results"
+DGC_DB="${DGC_BASE}/db"
 ```
 
 ## Import data
@@ -35,7 +42,7 @@ export DGC_BASE="./lichtenstein"
 To import data you can either place an osm.pbf file into the source folder an rename it to source.osm.pbf or let the docker container take care of downloading a file:
 
 ```bash
-$ docker-compose run dgc fetch "http://download.geofabrik.de/europe/liechtenstein-latest.osm.pbf"
+$ docker-compose --env-file lichtenstein.env run dgc fetch "http://download.geofabrik.de/europe/liechtenstein-latest.osm.pbf"
 --2021-10-30 19:39:41--  http://download.geofabrik.de/europe/liechtenstein-latest.osm.pbf
 Resolving download.geofabrik.de (download.geofabrik.de)... 95.216.115.119, 116.202.112.212
 Connecting to download.geofabrik.de (download.geofabrik.de)|95.216.115.119|:80... connected.
@@ -53,7 +60,7 @@ Saving to: '/source/source.osm.pbf'
 The following command will extract the largest connected component found in the `source.osm.pbf` file.
 
 ```bash
-$ docker-compose run dgc graph
+$ docker-compose --env-file lichtenstein.env run dgc graph
 Extracting largest components
 Found 16 config entries
 
@@ -99,7 +106,7 @@ Writing connected components: 0 seconds for 72K 777
 We now have to compute a contraction hierarchy:
 
 ```bash
-$ docker-compose run dgc ch
+$ docker-compose --env-file lichtenstein.env run dgc ch
 Computing contraction hierarchy
 Removed 6 duplicate edge(s) and updated edge IDs.
 Converting CH into binary format
@@ -129,7 +136,7 @@ The command needs the ch levels used to partition the ch graph.
 They to be given as a single string separated by a comma.
 
 ```bash
-$ docker-compose run dgc dgc "5,10,15"
+$ docker-compose --env-file lichtenstein.env run dgc dgc "5,10,15"
 Computing dgc with bounds 5,10,15
 Start constructing labels with 4 thread(s).
 Levels: 5 10 15
@@ -140,13 +147,41 @@ Finished construction in 0.412014 seconds
 Start binary write
 ```
 
+## Compute Out-of-Memory Data Structures
+
+In order to run the out-of-memory benchmarks we first have to compute the necessary files.
+This is also needed to compute sample queries.
+
+```bash
+$ docker-compose --env-file lichtenstein.env run dgc oom
+Converting to out-of-memory structures
+Operation: export-oa
+File: /data/ch.bin
+dca: hop
+Importing data
+Finished importing data
+Exporting data
+Serializing LabelBuckets at 0
+Serializing LabelBuckets at 442394
+Finished exporting data
+Operation: export-oa
+File: /data/dgc.bin
+dca: hop
+Importing data
+Finished importing data
+Exporting data
+Serializing LabelBuckets at 0
+Serializing LabelBuckets at 1039650
+Finished exporting data
+```
+
 ## Run the Benchmarks
 
 We're no ready to run the benchmarks.
 We first have to generate the queries (you may also provide one yourself):
 
 ```bash
-$ docker-compose run dgc queries --query-sizes 3 4 5
+$ docker-compose --env-file lichtenstein.env run dgc queries --query-sizes 3 4 5
 Setting query_sizes to [3, 4, 5]
 Writing files to directory /results/queries/
 Generating 10^3 queries
@@ -159,6 +194,6 @@ The following command will run the dgc and ch out-of-memory benchmarks each twic
 After each iteration the current result table is printed which we omit here for brevity.
 
 ```bash
-$ docker-compose run dgc bench --runs 2 --query-sizes 3 4 --selection dgc-oom ch-oom
+$ docker-compose --env-file lichtenstein.env run dgc bench --runs 2 --query-sizes 3 4 --selection dgc-oom ch-oom
 
 ```
