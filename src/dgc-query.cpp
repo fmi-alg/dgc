@@ -919,6 +919,16 @@ public:
 			{
 				return 0;
 			}
+#ifndef NDEBUG
+			if (source < 0 || parent->_numNodes <= source)
+			{
+				throw std::runtime_error("Source node id is out of range.");
+			}
+			if (target < 0 || parent->_numNodes <= target)
+			{
+				throw std::runtime_error("Target node id is out of range.");
+			}
+#endif
 	#ifdef VERBOSE_QUERY
 		{
 			auto bucket = parent->_fwdLabels[source];
@@ -1051,6 +1061,16 @@ public:
 			{
 				return 0;
 			}
+#ifndef NDEBUG
+			if (source < 0 || parent->_numNodes <= source)
+			{
+				throw std::runtime_error("Source node id is out of range.");
+			}
+			if (target < 0 || parent->_numNodes <= target)
+			{
+				throw std::runtime_error("Target node id is out of range.");
+			}
+#endif
 			std::priority_queue<std::pair<int, int>, std::vector<std::pair<int, int>>, std::greater<std::pair<int, int>>> pQ;
 			pQ.push(std::make_pair(0, source));
 			_fwdDistances.emplace(source, 0);
@@ -1192,7 +1212,11 @@ protected:
     virtual int _getGroupOfNode(int rank)
     {
         int group = 0;
+#ifdef NDEBUG
         while (rank >= _groupBounds[group])
+#else
+        while (rank >= _groupBounds.at(group))
+#endif
         {
             group++;
         }
