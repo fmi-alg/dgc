@@ -90,9 +90,9 @@ RUN strip ${IMAGE_DIR}/usr/local/bin/ch-constructor
 FROM buildenv AS dgc
 
 WORKDIR ${SRC_DIR}
-RUN git clone --recursive -b oom-support https://github.com/fmi-alg/dgc.git
+RUN git clone --recursive -b master https://github.com/fmi-alg/dgc.git
 RUN git -C ${SRC_DIR}/dgc fetch \ 
-	&& git -C ${SRC_DIR}/dgc checkout 31ab3a47889d5f9dda4a887a1855773e275fd9ad \
+	&& git -C ${SRC_DIR}/dgc checkout deb3c564941ba54514d8c2124033cc4137efea2d \
 	&& git -C ${SRC_DIR}/dgc submodule update --init --recursive
 WORKDIR ${SRC_DIR}/dgc/build
 RUN cmake -DCMAKE_BUILD_TYPE=Release -DOPTIMIZE_ULTRA=TRUE ../

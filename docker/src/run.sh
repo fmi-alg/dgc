@@ -11,7 +11,7 @@ dataDir="/data"
 resultsDir="/results"
 dgcPgPassword="${PGPASSWORD:-dgc}"
 
-set -x
+# set -x
 
 
 function createPostgresConfig() {
@@ -19,14 +19,14 @@ function createPostgresConfig() {
   if [ -n "$AUTOVACUUM" ]; then
     sudo -u postgres echo "autovacuum = $AUTOVACUUM" >> /etc/postgresql/current/main/conf.d/postgresql.custom.conf || exit 1
   fi
-  cat /etc/postgresql/current/main/conf.d/postgresql.custom.conf
+  # cat /etc/postgresql/current/main/conf.d/postgresql.custom.conf
 }
 
 function setPostgresPassword() {
-    sudo -u postgres psql -c "CREATE USER dgc"
-    sudo -u postgres psql -c "ALTER USER dgc PASSWORD '${dgcPgPassword}'"
-    sudo -u postgres psql -c "ALTER USER dgc CREATEDB LOGIN"
-    sudo -u postgres psql -c "GRANT ALL ON TABLESPACE pg_default TO dgc"
+    sudo -u postgres psql -c "CREATE USER dgc" > /dev/null 2>&1
+    sudo -u postgres psql -c "ALTER USER dgc PASSWORD '${dgcPgPassword}'" > /dev/null 2>&1
+    sudo -u postgres psql -c "ALTER USER dgc CREATEDB LOGIN" > /dev/null 2>&1
+    sudo -u postgres psql -c "GRANT ALL ON TABLESPACE pg_default TO dgc" > /dev/null 2>&1
 }
 
 function die() {
@@ -68,6 +68,7 @@ fi
 
 if [ "$1" = "fetch" ]; then
     sudo -u dgc wget -O ${sourceDir}/source.osm.pbf "${2}"
+    exit 0
 fi
 if [ "$1" = "graph" ]; then
     do_graph="y"
@@ -188,8 +189,6 @@ while (( "$#" )); do
       exit 1
       ;;
     *) # preserve positional arguments
-      echo "Unkown option $1"
-      exit 1
       shift
       ;;
   esac
@@ -200,25 +199,27 @@ if [ "$do_queries" = "y" ]; then
     sudo -u dgc bench.py \
         -e dgc-query \
         -q ${resultsDir}/queries/ --generate --query-sizes ${query_sizes[@]} \
-        --dgc ${dataDir}/dgc.bin.sserialize-oa -v || die "Generating queries failed"
+        --dgc-oom ${dataDir}/dgc.bin.sserialize-oa -v || die "Generating queries failed"
 fi
 
 if [ "$do_bench" = "y" ]; then
-    # Ensure that database directory is in right state
-    rm -rf /var/lib/postgresql/* > /dev/null 2>&1
-    chown postgres:postgres -R /var/lib/postgresql
-    if [ ! -f /var/lib/postgresql/${POSTGRES_VERSION}/main/PG_VERSION ]; then
-        sudo -u postgres /usr/lib/postgresql/${POSTGRES_VERSION}/bin/pg_ctl -D /var/lib/postgresql/${POSTGRES_VERSION}/main/ initdb -o "--locale C.UTF-8"
+    if [[ "${bench_selection[@]}" =~ sql ]]; then
+        # Ensure that database directory is in right state
+        rm -rf /var/lib/postgresql/* > /dev/null 2>&1
+        chown postgres:postgres -R /var/lib/postgresql
+        if [ ! -f /var/lib/postgresql/${POSTGRES_VERSION}/main/PG_VERSION ]; then
+            sudo -u postgres /usr/lib/postgresql/${POSTGRES_VERSION}/bin/pg_ctl -D /var/lib/postgresql/${POSTGRES_VERSION}/main/ initdb -o "--locale C.UTF-8" > /dev/null 2>&1
+        fi
+        # Initialize PostgreSQL
+        createPostgresConfig
+        service postgresql start
+        sudo -u postgres createuser dgc > /dev/null 2>&1
+        sudo -u postgres createdb -E UTF8 -O dgc dgc > /dev/null 2>&1
+        setPostgresPassword
     fi
 
-    # Initialize PostgreSQL
-    createPostgresConfig
-    service postgresql start
-    sudo -u postgres createuser dgc
-    sudo -u postgres createdb -E UTF8 -O dgc dgc
-    setPostgresPassword
-
     mkdir -p ${resultsDir}/bench || die "Could not create bench directory"
+    echo "Running benchmarks..."
     sudo -u dgc bench.py \
         -q ${resultsDir}/queries/ --query-sizes ${query_sizes[@]} \
         -e dgc-query \
@@ -234,6 +235,9 @@ if [ "$do_bench" = "y" ]; then
         ${verbose_mode} \
         || die "Benchmarking failed"
 
-    service postgresql stop
+
+    if [[ "${bench_selection[@]}" =~ sql ]]; then
+        service postgresql stop
+    fi
 fi
 exit 0
